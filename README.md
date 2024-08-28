@@ -10,4 +10,4 @@ Datasets: glove, MNIST, NYTimes (https://github.com/erikbern/ann-benchmarks)
 
 Idea 2:
 Use the results from RAG in order to rank the documents, and if the results don't match
-we will classify the result as hallucinations
+we will classify the result as hallucinations. we will use information retrivel methods, such as the RM3 model
