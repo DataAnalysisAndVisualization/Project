@@ -1,0 +1,19 @@
+Our algorithm:
+Index hierarchical k-means, using k-means++.
+calculate voronoi diagram on the lowest level clusters.
+Convert the lowest level clusters to a graph. Every vertex has search status.
+Each cluster holds a list of vectors.
+Calculate vertex distance lower bound using the voronoi diagram.
+Run nearest neighbors search using greedy search over the graph and pruning.
+
+Datasets: MNIST, BERT embeddings of New York Times articles.
+
+Evaluation: Number of comparisons, index time, retrieval time.
+
+Compare to:
+KD-Tree, brute search, epsilon-optimal search.
+
+Find best k-means hyper parameters.
+
+Prove optimality.
+Find complexity upper bound (Theta(N)?).
