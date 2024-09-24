@@ -17,3 +17,9 @@ Find best k-means hyper parameters.
 
 Prove optimality.
 Find complexity upper bound (Theta(N)?).
+
+
+Project Structure:
+models part - receive dataset, nns in the interface.
+datasets part - load/create dataset.
+evaluation part - optimize our algorithm and test others.
