@@ -116,3 +116,20 @@ def calc_hierarchical_kmeans(vectors, n_clusters, max_layers, max_iter=100):
         return centroids, sub_clusters
 
     return centroids, clusters
+
+def extract_lowest_clusters(centroids, clusters):
+    if type(clusters[0]) == np.ndarray:
+        return centroids, clusters
+
+    lowest_centroids = None
+    lowest_clusters = []
+    for cluster in clusters:
+        sub_centroids, sub_clusters = cluster
+        cluster_lowest_centroids, cluster_lowest_clusters = extract_lowest_clusters(sub_centroids, sub_clusters)
+        if lowest_centroids is not None:
+            lowest_centroids = np.concatenate((lowest_centroids, cluster_lowest_centroids), axis=0)
+        else:
+            lowest_centroids = cluster_lowest_centroids
+        lowest_clusters.extend(cluster_lowest_clusters)
+
+    return lowest_centroids, lowest_clusters
