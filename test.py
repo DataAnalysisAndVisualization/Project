@@ -1,32 +1,42 @@
 import numpy as np
-from index_models import calc_hierarchical_kmeans, extract_lowest_clusters
+from index_models import (calc_hierarchical_kmeans, extract_lowest_clusters, calc_voronoi_polyhedrons,
+                          simplify_polyhedron, calc_polyhedrons, approximate_distance)
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from matplotlib import pyplot as plt
 import cvxpy as cp
+import time
 
 
 def test_hierarchical_kmeans():
-    vectors = np.random.rand(1000, 100)
-    centroids, clusters = calc_hierarchical_kmeans(vectors, 5, 2, max_iter=100)
+    n_vectors = 1000
+    vectors = np.random.rand(n_vectors, 100)
+    ids = list(range(n_vectors))
+    centroids, clusters = calc_hierarchical_kmeans(vectors, ids, 5, 2, max_iter=100)
     print(centroids.shape)
     for sub_centroids, sub_clusters in clusters:
         sub_clusters_lens = [sub_cluster.shape[0] for sub_cluster in sub_clusters]
         print(sub_centroids.shape, *sub_clusters_lens)
 
 def test_extract_lowest_clusters():
-    vectors = np.random.rand(1000, 100)
-    centroids, clusters = calc_hierarchical_kmeans(vectors, 5, 3, max_iter=100)
+    n_vectors = 1000
+    vectors = np.random.rand(n_vectors, 100)
+    ids = list(range(n_vectors))
+    centroids, clusters = calc_hierarchical_kmeans(vectors, ids, 5, 3, max_iter=100)
     lowest_centroids, lowest_clusters = extract_lowest_clusters(centroids, clusters)
     print(lowest_centroids.shape)
     print(len(lowest_centroids))
 
 def test_voronoi():
-    vectors = np.random.rand(1000, 2)
-    centroids, clusters = calc_hierarchical_kmeans(vectors, 5, 2, max_iter=100)
+    n_vectors = 1000
+    vectors = np.random.rand(n_vectors, 2)
+    ids = list(range(n_vectors))
+    centroids, clusters = calc_hierarchical_kmeans(vectors, ids, 5, 2, max_iter=100)
     lowest_centroids, lowest_clusters = extract_lowest_clusters(centroids, clusters)
     vor = Voronoi(lowest_centroids)
     fig = voronoi_plot_2d(vor)
     plt.show()
+    # print(vor.ridge_points)
+    # print(vor.ridge_vertices)
 
 def plot_voronoi_bad_case():
     vectors = np.array([[0, 0],
@@ -158,6 +168,57 @@ def test_approximate_distance():
     print("Solver used:", problem.solver_stats.solver_name)
     print("Number of iterations:", problem.solver_stats.num_iters)
 
+def test_simplify_polyhedron():
+    A = np.array([[1,2,3],
+                 [4,5,6],
+                  [2,4,6]])
+    b = np.array([4,7,8])
+    A_new, b_new = simplify_polyhedron(A,b)
+    print(A_new)
+    print(b_new)
+
+
+def test_calc_voronoi_polyhedrons():
+    n_vectors = 1000
+    vectors = np.random.rand(n_vectors, 10)
+    ids = list(range(n_vectors))
+    t = time.time()
+    print('kmeans start', t)
+    centroids, clusters = calc_hierarchical_kmeans(vectors, ids, 5, 3, max_iter=100)
+    print('kmeans end', time.time()-t)
+    t=time.time()
+    lowest_centroids, lowest_clusters = extract_lowest_clusters(centroids, clusters)
+    print('extract end', time.time()-t)
+    t=time.time()
+    print('vor start')
+    vor = Voronoi(lowest_centroids)
+    print('voronoi end', time.time()-t)
+    t=time.time()
+    As, bs = calc_voronoi_polyhedrons(vor)
+    print('polyhedrons end', time.time()-t)
+    print([A.shape for A in As])
+    print([b.shape for b in bs])
+
+def test_calc_polyhedrons():
+    n_vectors = 1000
+    vectors = np.random.rand(n_vectors, 2)
+    ids = list(range(n_vectors))
+    print('kmeans start')
+    centroids, clusters = calc_hierarchical_kmeans(vectors, ids, 5, 3, max_iter=100)
+    print('kmeans end')
+    lowest_centroids, lowest_clusters = extract_lowest_clusters(centroids, clusters)
+    As, bs = calc_polyhedrons(lowest_centroids)
+    for A, b in zip(As, bs):
+        print(A.shape, b.shape)
+    print(lowest_centroids.shape, len(As))
+
+    print(As[0])
+    print(bs[0])
+    t = time.time()
+    print(approximate_distance(As[0], bs[0], As[-1], bs[-1], eps_abs=0.001))
+    print(time.time()-t)
+
 if __name__ == '__main__':
-    test_approximate_distance()
-    
+    test_calc_polyhedrons()
+
+
