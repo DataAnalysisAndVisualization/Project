@@ -1,6 +1,5 @@
 import numpy as np
-from index_models import (calc_hierarchical_kmeans, extract_lowest_clusters, calc_voronoi_polyhedrons,
-                          simplify_polyhedron, calc_polyhedrons, approximate_distance)
+from index_models import *
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from matplotlib import pyplot as plt
 import cvxpy as cp
@@ -167,37 +166,6 @@ def test_approximate_distance():
     print(problem.solve(eps_abs=0.001))
     print("Solver used:", problem.solver_stats.solver_name)
     print("Number of iterations:", problem.solver_stats.num_iters)
-
-def test_simplify_polyhedron():
-    A = np.array([[1,2,3],
-                 [4,5,6],
-                  [2,4,6]])
-    b = np.array([4,7,8])
-    A_new, b_new = simplify_polyhedron(A,b)
-    print(A_new)
-    print(b_new)
-
-
-def test_calc_voronoi_polyhedrons():
-    n_vectors = 1000
-    vectors = np.random.rand(n_vectors, 10)
-    ids = list(range(n_vectors))
-    t = time.time()
-    print('kmeans start', t)
-    centroids, clusters = calc_hierarchical_kmeans(vectors, ids, 5, 3, max_iter=100)
-    print('kmeans end', time.time()-t)
-    t=time.time()
-    lowest_centroids, lowest_clusters = extract_lowest_clusters(centroids, clusters)
-    print('extract end', time.time()-t)
-    t=time.time()
-    print('vor start')
-    vor = Voronoi(lowest_centroids)
-    print('voronoi end', time.time()-t)
-    t=time.time()
-    As, bs = calc_voronoi_polyhedrons(vor)
-    print('polyhedrons end', time.time()-t)
-    print([A.shape for A in As])
-    print([b.shape for b in bs])
 
 def test_calc_polyhedrons():
     n_vectors = 1000

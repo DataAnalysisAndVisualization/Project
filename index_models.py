@@ -1,7 +1,6 @@
 import numpy as np
-from sklearn.metrics import pairwise_distances
-import sympy as sp
 import cvxpy as cp
+from scipy.spatial.distance import cdist
 
 
 """
@@ -18,25 +17,92 @@ find closest lowest level cluster.
 Execute greedy nns search.
 
 
+what to do?
+calc hierarchical kmeans with object.
+at lowest level store centroid, vectors, vector ids, centroid id.
+
 """
-class GreedyKmeans:
-    def __init__(self, vectors, ids, dim, n_layer_clusters, max_layers):
-        self.centroids, self.clusters = calc_hierarchical_kmeans(vectors, ids, n_layer_clusters, max_layers, max_iter=100)
-        self.lowest_centroids, self.lowest_clusters = extract_lowest_clusters(self.centroids, self.clusters)
-        As, bs = calc_polyhedrons(self.lowest_centroids)
-        queues = calc_search_queues(As, bs, self.lowest_clusters, eps_abs=0.001)
+
+class BaseCluster:
+    def __init__(self, vectors, vector_ids, centroid, cluster_id):
+        self.vectors = vectors
+        self.vector_ids = vector_ids
+        self.centroid = centroid
+        self.cluster_id = cluster_id
+        self.layer=0
+
+class SuperCluster:
+    def __init__(self, centroid, sub_centroids, sub_clusters, layer):
+        self.centroid = centroid
+        self.sub_centroids = sub_centroids
+        self.sub_clusters = sub_clusters
+        self.layer = layer
+
+    def extract_base_clusters(self):
+        if self.layer == 1:
+            return self.sub_centroids, self.sub_clusters
+
+        base_centroids = None
+        base_clusters = []
+        for cluster in self.sub_clusters:
+            cluster_base_centroids, cluster_base_clusters = cluster.extract_base_clusters()
+            if base_centroids is not None:
+                base_centroids = np.concatenate((base_centroids, cluster_base_centroids), axis=0)
+            else:
+                base_centroids = cluster_base_centroids
+            base_clusters.extend(cluster_base_clusters)
+
+        return base_centroids, base_clusters
 
     def find_closest_cluster(self, x):
-        pass
+        x_cluster_distances = cdist(x, self.sub_centroids, 'euclidean')
+        closest_index = np.argmin(x_cluster_distances)
+        return self.sub_clusters[closest_index]
 
+
+def calc_hierarchical_kmeans(vectors, vector_ids, n_clusters, max_layers, max_iter=100, cluster_id=0, super_centroid=None):
+    centroids, clusters = calc_k_means(vectors, vector_ids, n_clusters, max_iter)
+    if max_layers > 1:
+        sub_clusters = []
+        for i in range(centroids.shape[0]):
+            sub_cluster_vectors, sub_cluster_vector_ids = clusters[i]
+            sub_centroid = centroids[i]
+            sub_cluster, cluster_id = calc_hierarchical_kmeans(sub_cluster_vectors, sub_cluster_vector_ids, n_clusters,
+                                                               max_layers-1, max_iter=100, cluster_id=cluster_id,
+                                                               super_centroid=sub_centroid)
+            sub_clusters.append(sub_cluster)
+        super_cluster = SuperCluster(super_centroid, centroids, sub_clusters, layer=max_layers)
+        return super_cluster, cluster_id
+
+    base_clusters = []
+    for i in range(centroids.shape[0]):
+        base_centroid = centroids[i]
+        base_vectors, base_vector_ids = clusters[i]
+        base_cluster = BaseCluster(base_vectors, base_vector_ids, base_centroid, cluster_id)
+        base_clusters.append(base_cluster)
+        cluster_id += 1
+
+    super_cluster = SuperCluster(super_centroid, centroids, base_clusters)
+    return super_cluster, cluster_id
+
+class GreedyKmeans:
+    def __init__(self, vectors, vector_ids, dim, n_layer_clusters, max_layers):
+        self.root_cluster, _ = calc_hierarchical_kmeans(vectors, vector_ids, n_layer_clusters, max_layers, max_iter=100)
+        self.lowest_centroids, self.lowest_clusters = self.root_cluster.extract_base_clusters()
+        As, bs = calc_polyhedrons(self.lowest_centroids)
+        self.queues = calc_search_queues(As, bs, self.lowest_clusters, eps_abs=0.001)
+
+    def find_closest_base_cluster(self, x):
+        cluster = self.root_cluster
+        while cluster.layer > 0:
+            cluster = cluster.find_closest_cluster(x)
+        return cluster
 
     def knns(self, x, k):
         closest_cluster, closest_cluster_id = self.find_closest_cluster(x)
         top_k = update_top_k(x, k, [], closest_cluster)
-        queue = queues[closest_cluster_id]
+        queue = self.queues[closest_cluster_id]
         # for dist,
-
-
 
 def chose_kmeans_pp_clusters(vectors, n_clusters):
     """
@@ -57,7 +123,6 @@ def chose_kmeans_pp_clusters(vectors, n_clusters):
         centroids[i] = vectors[next_centroid_idx]
     return centroids
 
-
 def label_vectors_to_centroids(vectors, ids, centroids):
     """
     Given vectors and centroids, separate the vectors to an index based on the centroids
@@ -77,7 +142,6 @@ def label_vectors_to_centroids(vectors, ids, centroids):
         clusters[label][0] = np.array(clusters[label][0])
 
     return [clusters[label] for label in range(centroids.shape[0])]
-
 
 def update_k_means_centroids(vectors, centroids):
     """
@@ -118,83 +182,6 @@ def calc_k_means(vectors, ids, n_clusters, max_iter=100):
 
     return centroids, clusters
 
-def calc_hierarchical_kmeans(vectors, ids, n_clusters, max_layers, max_iter=100):
-    """
-    :param vectors:
-    :param ids:
-    :param n_clusters:
-    :param max_layers:
-    :param max_iter:
-    :return: a list of lists of length 2 and depth n_clusters.
-    The first value is the centroids and the second value is the sub-clusters recursively.
-    [top_centroids, [...[sub_centroids_1, sub_cluster_1], ..., [sub_centroids_n, sub_cluster_n]...]
-    [bottom_centroids, [[vectors_1, ids_1], ..., [vectors_n, ids_n]]
-    """
-    centroids, clusters = calc_k_means(vectors, ids, n_clusters, max_iter)
-    if max_layers > 1:
-        sub_clusters = [calc_hierarchical_kmeans(clusters[cluster_idx][0], clusters[cluster_idx][1], n_clusters, max_layers-1, max_iter)
-                       for cluster_idx in range(n_clusters)]
-        return centroids, sub_clusters
-
-    return centroids, clusters
-
-def extract_lowest_clusters(centroids, clusters):
-    if type(clusters[0][1][0]) == int:# if lowest level (sub_cluster_1[0] vs ids_1[0])
-        return centroids, clusters
-
-    lowest_centroids = None
-    lowest_clusters = []
-    for cluster in clusters:
-        sub_centroids, sub_clusters = cluster
-        cluster_lowest_centroids, cluster_lowest_clusters = extract_lowest_clusters(sub_centroids, sub_clusters)
-        if lowest_centroids is not None:
-            lowest_centroids = np.concatenate((lowest_centroids, cluster_lowest_centroids), axis=0)
-        else:
-            lowest_centroids = cluster_lowest_centroids
-        lowest_clusters.extend(cluster_lowest_clusters)
-
-    return lowest_centroids, lowest_clusters
-
-def calc_voronoi_polyhedrons(vor):
-    """
-    Calculate the half-spaces that define the voronoi polyhedrons
-    :param vor:
-    :return: list[A], list[b]
-    """
-    npoints = vor.points.shape[0]
-    dir_vecs = []
-    project_vals = []
-    for i in range(npoints):
-        dir_vecs.append([])
-        project_vals.append([])
-
-    for point1id, point2id in vor.ridge_points:
-        point1, point2 = vor.points[[point1id, point2id]]
-        mean_point = np.mean((point1,point2), axis=0)
-        dir_vec = point2 - point1
-        project_val = np.dot(dir_vec, mean_point)
-        dir_vecs[point1id].append(dir_vec)
-        project_vals[point1id].append(project_val)
-
-        dir_vecs[point2id].append(-1*dir_vec)
-        project_vals[point2id].append(-1*project_val)
-
-    As = [np.array(dir_vecs_) for dir_vecs_ in dir_vecs]
-    bs = [np.array(project_vals_) for project_vals_ in project_vals]
-    return As, bs
-
-def simplify_polyhedron(A,b):
-    M = np.column_stack((A, b))
-    M_sympy = sp.Matrix(M)
-    ref, _ = M_sympy.rref()
-    ref = np.array(ref.tolist()).astype(np.float64)
-    n_non_zero_rows = np.max(np.nonzero(ref)[0])
-    ref = ref[:n_non_zero_rows+1]
-    A_new = ref[:,:-1]
-    b_new = ref[:,-1]
-    return A_new, b_new
-
-
 def calc_polyhedrons(points):
     """
     Calculate the half-spaces that define the voronoi polyhedrons
@@ -223,7 +210,6 @@ def calc_polyhedrons(points):
         # A, b = simplify_polyhedron(A,b)
         As[i], bs[i] = A, b
     return As, bs
-
 
 def approximate_distance(A, b, B, c, eps_abs=0.001):
     """
@@ -279,5 +265,5 @@ def update_top_k(x, k, top_k, cluster):
     Update the top k closest neighbors to x by scanning the cluster
     """
     cluster_vectors, cluster_ids = cluster
-    cluster_distances = cp.spatial.distance.cdist(x, cluster_vectors, 'euclidean').tolist()
+    cluster_distances = cdist(x, cluster_vectors, 'euclidean').tolist()
     return (top_k + list(zip(cluster_distances, cluster_ids))).sort()[:k]
