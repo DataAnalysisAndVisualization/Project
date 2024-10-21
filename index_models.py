@@ -114,15 +114,17 @@ class GreedyKmeans:
         return cluster
 
     def knns(self, x, k):
+        delete_this = 1
         closest_cluster = self.find_closest_base_cluster(x)
         top_k_vector_ids, top_k_vector_distances = closest_cluster.find_top_k(x, k)
         cluster_queue = self.queues[closest_cluster.cluster_id]
         for clusters_distance, cluster in cluster_queue:
             if clusters_distance > top_k_vector_distances[-1]:
+                print('searched: ', delete_this, '/', len(cluster_queue))
                 return top_k_vector_ids, top_k_vector_distances
-
+            delete_this += 1
             top_k_vector_ids, top_k_vector_distances = cluster.update_top_k(x, k, top_k_vector_ids, top_k_vector_distances)
-
+        print('searched: ', delete_this, '/', len(cluster_queue))
         return top_k_vector_ids, top_k_vector_distances
 
 def chose_kmeans_pp_clusters(vectors, n_clusters):
@@ -251,7 +253,7 @@ def approximate_distance(A, b, B, c, eps_abs=0.001):
 
     # Define and solve the problem
     problem = cp.Problem(objective, constraints)
-    return problem.solve(eps_abs=eps_abs, solver='OSQP')
+    return problem.solve(eps_abs=eps_abs)# , solver='OSQP' TODO: Understand why OSQP doesn't work for dim=2
 
 def calc_search_queues(As, bs, lowest_clusters, eps_abs=0.001):
     distance_matrix = calc_distance_matrix(As, bs, eps_abs)

@@ -104,10 +104,11 @@ def test_calc_polyhedrons():
 
 def test_GreedyKmeans():
     n_vectors = 1000
-    vectors = np.random.rand(n_vectors, 100)
+    dim = 3
+    vectors = np.random.rand(n_vectors, dim)
     vector_ids = list(range(n_vectors))
     greedy_kmeans = GreedyKmeans(vectors, vector_ids, n_layer_clusters=3, max_layers=3)
-    x = np.random.rand(100)
+    x = np.random.rand(dim)
     knn = greedy_kmeans.knns(x,10)
 
     print(x)
