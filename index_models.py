@@ -31,6 +31,21 @@ class BaseCluster:
         self.cluster_id = cluster_id
         self.layer=0
 
+    def update_top_k(self, x, k, top_k_vector_ids, top_k_vector_distances):
+        """
+        Update the top k closest neighbors to x by scanning the cluster
+        """
+        cluster_distances = np.linalg.norm(self.vectors - x, axis=1)# cdist(x, self.vectors, 'euclidean')
+        concat_distances = np.concatenate((top_k_vector_distances, cluster_distances))
+        concat_ids = np.concatenate((top_k_vector_ids, self.vector_ids))
+        new_top_k_idx = np.argpartition(concat_distances, k)[:k]
+        return concat_ids[new_top_k_idx], concat_distances[new_top_k_idx]
+
+    def find_top_k(self, x, k):
+        cluster_distances = np.linalg.norm(self.vectors - x, axis=1)# cdist(x, self.vectors, 'euclidean')
+        top_k_idx = np.argpartition(cluster_distances, k)[:k]
+        return self.vector_ids[top_k_idx], cluster_distances[top_k_idx]
+
 class SuperCluster:
     def __init__(self, centroid, sub_centroids, sub_clusters, layer):
         self.centroid = centroid
@@ -55,7 +70,7 @@ class SuperCluster:
         return base_centroids, base_clusters
 
     def find_closest_cluster(self, x):
-        x_cluster_distances = cdist(x, self.sub_centroids, 'euclidean')
+        x_cluster_distances = np.linalg.norm(self.sub_centroids - x, axis=1)# cdist(x.reshape(1, -1), self.sub_centroids, 'euclidean')
         closest_index = np.argmin(x_cluster_distances)
         return self.sub_clusters[closest_index]
 
@@ -82,11 +97,11 @@ def calc_hierarchical_kmeans(vectors, vector_ids, n_clusters, max_layers, max_it
         base_clusters.append(base_cluster)
         cluster_id += 1
 
-    super_cluster = SuperCluster(super_centroid, centroids, base_clusters)
+    super_cluster = SuperCluster(super_centroid, centroids, base_clusters, layer=max_layers)
     return super_cluster, cluster_id
 
 class GreedyKmeans:
-    def __init__(self, vectors, vector_ids, dim, n_layer_clusters, max_layers):
+    def __init__(self, vectors, vector_ids, n_layer_clusters, max_layers):
         self.root_cluster, _ = calc_hierarchical_kmeans(vectors, vector_ids, n_layer_clusters, max_layers, max_iter=100)
         self.lowest_centroids, self.lowest_clusters = self.root_cluster.extract_base_clusters()
         As, bs = calc_polyhedrons(self.lowest_centroids)
@@ -99,10 +114,16 @@ class GreedyKmeans:
         return cluster
 
     def knns(self, x, k):
-        closest_cluster, closest_cluster_id = self.find_closest_cluster(x)
-        top_k = update_top_k(x, k, [], closest_cluster)
-        queue = self.queues[closest_cluster_id]
-        # for dist,
+        closest_cluster = self.find_closest_base_cluster(x)
+        top_k_vector_ids, top_k_vector_distances = closest_cluster.find_top_k(x, k)
+        cluster_queue = self.queues[closest_cluster.cluster_id]
+        for clusters_distance, cluster in cluster_queue:
+            if clusters_distance > top_k_vector_distances[-1]:
+                return top_k_vector_ids, top_k_vector_distances
+
+            top_k_vector_ids, top_k_vector_distances = cluster.update_top_k(x, k, top_k_vector_ids, top_k_vector_distances)
+
+        return top_k_vector_ids, top_k_vector_distances
 
 def chose_kmeans_pp_clusters(vectors, n_clusters):
     """
@@ -140,6 +161,7 @@ def label_vectors_to_centroids(vectors, ids, centroids):
 
     for label in clusters:
         clusters[label][0] = np.array(clusters[label][0])
+        clusters[label][1] = np.array(clusters[label][1])
 
     return [clusters[label] for label in range(centroids.shape[0])]
 
@@ -243,7 +265,7 @@ def calc_search_queues(As, bs, lowest_clusters, eps_abs=0.001):
             cluster = lowest_clusters[j]
             dist = distance_matrix[i, j]
             queue.append((dist, cluster))
-        queue.sort()
+        queue.sort(key=lambda x: x[0])
         queues.append(queue)
     return queues
 
@@ -258,12 +280,3 @@ def calc_distance_matrix(As, bs, eps_abs=0.001):
             distances[i,j] = dist
             distances[j,i] = dist
     return distances
-
-
-def update_top_k(x, k, top_k, cluster):
-    """
-    Update the top k closest neighbors to x by scanning the cluster
-    """
-    cluster_vectors, cluster_ids = cluster
-    cluster_distances = cdist(x, cluster_vectors, 'euclidean').tolist()
-    return (top_k + list(zip(cluster_distances, cluster_ids))).sort()[:k]

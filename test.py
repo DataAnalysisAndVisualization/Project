@@ -9,33 +9,32 @@ import time
 def test_hierarchical_kmeans():
     n_vectors = 1000
     vectors = np.random.rand(n_vectors, 100)
-    ids = list(range(n_vectors))
-    centroids, clusters = calc_hierarchical_kmeans(vectors, ids, 5, 2, max_iter=100)
-    print(centroids.shape)
-    for sub_centroids, sub_clusters in clusters:
-        sub_clusters_lens = [sub_cluster.shape[0] for sub_cluster in sub_clusters]
+    vector_ids = list(range(n_vectors))
+    root_cluster, _ = calc_hierarchical_kmeans(vectors, vector_ids, 5, 2, max_iter=100)
+    for sub_centroids, sub_clusters in zip(root_cluster.sub_centroids, root_cluster.sub_clusters):
+        sub_clusters_lens = [sub_cluster.vectors.shape[0] for sub_cluster in sub_clusters.sub_clusters]
         print(sub_centroids.shape, *sub_clusters_lens)
 
-def test_extract_lowest_clusters():
+def test_extract_base_clusters():
     n_vectors = 1000
     vectors = np.random.rand(n_vectors, 100)
-    ids = list(range(n_vectors))
-    centroids, clusters = calc_hierarchical_kmeans(vectors, ids, 5, 3, max_iter=100)
-    lowest_centroids, lowest_clusters = extract_lowest_clusters(centroids, clusters)
-    print(lowest_centroids.shape)
-    print(len(lowest_centroids))
+    vector_ids = list(range(n_vectors))
+    root_cluster, _ = calc_hierarchical_kmeans(vectors, vector_ids, 3, 3, max_iter=100)
+    base_centroids, base_clusters = root_cluster.extract_base_clusters()
+    print(base_centroids.shape)
+    print(len(base_centroids))
+    for base_cluster in base_clusters:
+        print(base_cluster.cluster_id)
 
 def test_voronoi():
     n_vectors = 1000
     vectors = np.random.rand(n_vectors, 2)
     ids = list(range(n_vectors))
-    centroids, clusters = calc_hierarchical_kmeans(vectors, ids, 5, 2, max_iter=100)
-    lowest_centroids, lowest_clusters = extract_lowest_clusters(centroids, clusters)
+    root_cluster, _ = calc_hierarchical_kmeans(vectors, ids, 5, 2, max_iter=100)
+    lowest_centroids, lowest_clusters = root_cluster.extract_base_clusters()
     vor = Voronoi(lowest_centroids)
     fig = voronoi_plot_2d(vor)
     plt.show()
-    # print(vor.ridge_points)
-    # print(vor.ridge_vertices)
 
 def plot_voronoi_bad_case():
     vectors = np.array([[0, 0],
@@ -55,89 +54,6 @@ def plot_voronoi_bad_case():
     plt.plot((-0.5, 2), (2.5, 0.5), c='r')
     plt.plot((-0.5, -0.5), (2.5, 0.5), c='b')
     plt.show()
-
-# Support function: Find the point on the convex hull farthest in a given direction
-# Equals to the farthest vertex in the case of a polygon
-def support(points, direction):
-    best_point = points[0]
-    best_distance = np.dot(best_point, direction)
-
-    for point in points[1:]:
-        distance = np.dot(point, direction)
-        if distance > best_distance:
-            best_distance = distance
-            best_point = point
-
-    return best_point
-
-
-# Minkowski difference support function for two convex hulls
-def support_minkowski(points1, points2, direction):
-    p1 = support(points1, direction)
-    p2 = support(points2, -direction)
-    return p1 - p2
-
-
-# Project vector 'v' onto vector 'u'
-def project(v, u):
-    return (np.dot(v, u) / np.dot(u, u)) * u
-
-
-# Function to check if the origin is inside the simplex and update the direction
-def contains_origin(simplex, direction):
-    A = simplex[-1]
-    AO = -A
-
-    # Compute projections for each face of the simplex
-    for i in range(len(simplex) - 1):
-        B = simplex[i]
-        AB = B - A
-        projection_AB_AO = project(AO, AB)
-        if np.linalg.norm(projection_AB_AO) < np.linalg.norm(AO):  # AO is not fully aligned with AB
-            direction[:] = AO - projection_AB_AO  # Move perpendicular to AB
-            simplex[:] = [A, B]
-            return False
-    return True
-
-# Main GJK algorithm for arbitrary dimensions
-def gjk(points1, points2):
-    # Start with an arbitrary direction, e.g., (1, 0, ..., 0) for n dimensions
-    dim = points1.shape[1]
-    direction = np.ones(dim)
-
-    # Initial point in the Minkowski difference
-    simplex = [support_minkowski(points1, points2, direction)]
-
-    # Reverse direction towards the origin
-    direction = -simplex[0]
-
-    while True:
-        # Add a new point in the Minkowski difference along the current direction
-        new_point = support_minkowski(points1, points2, direction)
-
-        # If the new point is not farther than the origin, return the distance
-        if np.dot(new_point, direction) <= 0:
-            return False, np.linalg.norm(direction)  # Distance found
-
-        # Add the new point to the simplex
-        simplex.append(new_point)
-
-        # Check if the origin is within the new simplex
-        if contains_origin(simplex, direction):
-            return True, 0  # The origin is within the simplex, meaning there's an intersection
-
-def test_gjk():
-    # Example in 4D space
-    points1 = np.array([[1, 1, 1, 1], [1, -1, 1, 1], [-1, 1, 1, 1], [-1, -1, 1, 1]])  # Convex hull 1 (in 4D)
-    points2 = np.array([[2, 2, 2, 2], [2, 0, 2, 2], [0, 2, 2, 2], [0, 0, 2, 2]])  # Convex hull 2 (in 4D)
-
-    # Call GJK to find distance in 4D space
-    intersection, distance = gjk(points1, points2)
-    if intersection:
-        print("Convex hulls intersect")
-    else:
-        print(f"Distance between convex hulls: {distance}")
-
 
 def test_approximate_distance():
     n = 5  # Number of variables in x and y
@@ -170,11 +86,11 @@ def test_approximate_distance():
 def test_calc_polyhedrons():
     n_vectors = 1000
     vectors = np.random.rand(n_vectors, 2)
-    ids = list(range(n_vectors))
+    vector_ids = list(range(n_vectors))
     print('kmeans start')
-    centroids, clusters = calc_hierarchical_kmeans(vectors, ids, 5, 3, max_iter=100)
+    root_cluster, _ = calc_hierarchical_kmeans(vectors, vector_ids, 5, 3, max_iter=100)
     print('kmeans end')
-    lowest_centroids, lowest_clusters = extract_lowest_clusters(centroids, clusters)
+    lowest_centroids, lowest_clusters = root_cluster.extract_base_clusters()
     As, bs = calc_polyhedrons(lowest_centroids)
     for A, b in zip(As, bs):
         print(A.shape, b.shape)
@@ -186,7 +102,19 @@ def test_calc_polyhedrons():
     print(approximate_distance(As[0], bs[0], As[-1], bs[-1], eps_abs=0.001))
     print(time.time()-t)
 
+def test_GreedyKmeans():
+    n_vectors = 1000
+    vectors = np.random.rand(n_vectors, 100)
+    vector_ids = list(range(n_vectors))
+    greedy_kmeans = GreedyKmeans(vectors, vector_ids, n_layer_clusters=3, max_layers=3)
+    x = np.random.rand(100)
+    knn = greedy_kmeans.knns(x,10)
+
+    print(x)
+    print(knn)
+
+
 if __name__ == '__main__':
-    test_calc_polyhedrons()
+    test_GreedyKmeans()
 
 
