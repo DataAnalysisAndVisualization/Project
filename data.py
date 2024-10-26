@@ -15,7 +15,7 @@ def build_mnist_dataset(download=True):
     mnist_dataset = datasets.MNIST(root='mnist_data', train=True, transform=transform, download=download)
     # Convert all images to a numpy array
     images_np = np.array([np.array(mnist_dataset[i][0]).squeeze().flatten() for i in range(len(mnist_dataset))])
-    print("mnist dataset from shape: "+images_np.shape)
+    # print("mnist dataset from shape: "+images_np.shape)
     return images_np
 
 
@@ -24,15 +24,15 @@ def build_text_dataset(DATASET_NAME='wikitext', CONFIG_NAME='wikitext-2-raw-v1',
     # Load the pre-trained embedding model
     model = SentenceTransformer(EMBEDDING_MODEL)
     dataset = load_dataset(DATASET_NAME, name=CONFIG_NAME)
-    texts = dataset['train']['text']
+    texts = dataset['train']['text'][:1000]
     # Generate embeddings for the texts
     embeddings = model.encode(texts)
     embeddings_array = np.array(embeddings)
-    texts_array = np.array(texts)
+    # texts_array = np.array(texts)
 
     # Check the shape of the embeddings and a few text samples
-    print("Embeddings shape:", embeddings_array.shape)
-    print(embeddings_array[0], texts_array[0])
-    return embeddings_array, texts_array  # Return the NumPy arrays
+    # print("Embeddings shape:", embeddings_array.shape)
+    # print(embeddings_array[0], texts_array[0])
+    return embeddings_array # Return the NumPy arrays
 
 

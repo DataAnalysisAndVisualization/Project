@@ -3,7 +3,9 @@ from index_models import *
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from matplotlib import pyplot as plt
 import cvxpy as cp
+# from data import *
 import time
+
 
 
 def test_hierarchical_kmeans():
@@ -104,18 +106,54 @@ def test_calc_polyhedrons():
 
 def test_GreedyKmeans():
     n_vectors = 1000
-    dim = 3
+    dim = 2
+    k = 10
     vectors = np.random.rand(n_vectors, dim)
-    vector_ids = list(range(n_vectors))
-    greedy_kmeans = GreedyKmeans(vectors, vector_ids, n_layer_clusters=3, max_layers=3)
+    vector_ids = np.array((range(n_vectors)))
+    greedy_kmeans = GreedyKmeans(vectors, vector_ids, n_layer_clusters=20, max_layers=1)
+    exhaustive_search = ExhaustiveSearch(vectors, vector_ids)
     x = np.random.rand(dim)
-    knn = greedy_kmeans.knns(x,10)
 
+    start = time.time()
+    knn_exhaustive = exhaustive_search.knns(x, k)
+    print('exhaustive search time: ', time.time() - start)
+
+    start = time.time()
+    knn_exhaustive = exhaustive_search.knns(x, k)
+    print('exhaustive search time: ', time.time() - start)
+
+    start = time.time()
+    knn_exhaustive = exhaustive_search.knns(x, k)
+    print('exhaustive search time: ', time.time() - start)
+
+    start = time.time()
+    knn = greedy_kmeans.knns(x,k)
+    print('GreedyKmeans search time: ', time.time() - start)
     print(x)
     print(knn)
 
+def test_build_mnist_dataset():
+    images_np = build_mnist_dataset()
+    print(images_np.shape)
+
+def test_build_text_dataset():
+    embeddings_array = build_text_dataset()
+    print('embedding shape: ', embeddings_array.shape)
+
+def test_compere_models():
+    n_vectors = 10000
+    dim = 2
+    k = 2
+    vectors = np.random.rand(n_vectors, dim)
+    vector_ids = np.array((range(n_vectors)))
+    greedy_kmeans = GreedyKmeans(vectors, vector_ids, n_layer_clusters=60, max_layers=1)
+    exhaustive_search = ExhaustiveSearch(vectors, vector_ids)
+    models = (greedy_kmeans, exhaustive_search)
+    ave_times = compare_models(models, k, vectors, n_compare=10000)
+    print(ave_times)
+
 
 if __name__ == '__main__':
-    test_GreedyKmeans()
+    test_compere_models()
 
 
