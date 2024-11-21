@@ -329,18 +329,24 @@ def compare_models(models,k, vectors, n_compare):
             sum_time[j] += time_end-time_start
     return sum_time / n_compare
 
-class knns:
-    def __init__(self,vectors,vector_ids,k):
+class KDtree:
+    def __init__(self, vectors, vector_ids):
+        self.name = 'KD-tree'
+        self.kdtree = KDTree(vectors)
         self.vectors = vectors
         self.vector_ids = vector_ids
-        self.k = k
+
+    def knns(self, x, k):
+        distances, top_k_idx = self.kdtree.query(x, k)
+        return self.vector_ids[top_k_idx], distances
     
-    def kdtree(self,x):
-        tree = KDTree(self.vectors)
-        dist, ind = tree.query(x, k=self.k)
-        return self.vector_ids[ind], dist
-    
-    def balltree(self,x):
-        tree = BallTree(self.vectors)
-        dist, ind = tree.query(x, k=self.k)
-        return self.vector_ids[ind], dist
+class BallTree:
+    def __init__(self, vectors, vector_ids):
+        self.name = 'Ball-tree'
+        self.balltree = BallTree(vectors)
+        self.vectors = vectors
+        self.vector_ids = vector_ids
+
+    def knns(self, x, k):
+        distances, top_k_idx = self.balltree.query(x, k)
+        return self.vector_ids[top_k_idx], distances
