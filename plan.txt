@@ -27,8 +27,8 @@ evaluation part - optimize our algorithm and test others.
 
 
 TODO:
-1. implement KD-Tree
-2. implement ball tree
+1. implement KD-Tree ☺
+2. implement ball tree ☺
 3. measure runtime for an algorithm and a point
 4. compare algorithms on a database - calculate boxplot for every algorithm.
 5. compare algorithms on databases.
