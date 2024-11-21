@@ -35,9 +35,9 @@ def build_text_dataset(DATASET_NAME='wikitext', CONFIG_NAME='wikitext-2-raw-v1',
     # print(embeddings_array[0], texts_array[0])
     return embeddings_array # Return the NumPy arrays
 
-def random_data():
+def random_data(n_vectors, dim):
     # generate a random dataset that contains points between 0 and 1
-    data = np.random.rand(100, 2)
+    data = np.random.rand(n_vectors, dim)
     return data
 
     
