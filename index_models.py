@@ -1,6 +1,6 @@
 import time
-import scipy.spatial.KDTree as KDTree
-import sklearn.neighbors.BallTree as BallTree
+from scipy.spatial import KDTree
+from sklearn.neighbors import BallTree
 import numpy as np
 import cvxpy as cp
 import timeit
