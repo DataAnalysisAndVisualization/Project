@@ -29,9 +29,7 @@ evaluation part - optimize our algorithm and test others.
 TODO:
 1. implement KD-Tree ☺
 2. implement ball tree ☺
-3. measure runtime for an algorithm and a point ☺
-4. compare algorithms on a database - calculate boxplot for every algorithm. ☺
-5. compare algorithms on databases. ☺
-6. our alg, average num of searched clusters over k.
-7. our alg, index time over num clusters.
-8. write findings
+3. measure runtime for an algorithm and a point
+4. compare algorithms on a database - calculate boxplot for every algorithm.
+5. compare algorithms on databases.
+6. write findings
