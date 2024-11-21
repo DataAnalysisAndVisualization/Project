@@ -110,6 +110,7 @@ def calc_hierarchical_kmeans(vectors, vector_ids, n_clusters, max_layers, max_it
 
 class GreedyKmeans:
     def __init__(self, vectors, vector_ids, n_layer_clusters, max_layers):
+        self.name = 'greedy kmeans'
         self.root_cluster, _ = calc_hierarchical_kmeans(vectors, vector_ids, n_layer_clusters, max_layers, max_iter=100)
         self.base_centroids, self.base_clusters = self.root_cluster.extract_base_clusters()
         As, bs = calc_polyhedrons(self.base_centroids)
