@@ -1,5 +1,6 @@
 import time
-
+import scipy.spatial.KDTree as KDTree
+import sklearn.neighbors.BallTree as BallTree
 import numpy as np
 import cvxpy as cp
 import timeit
@@ -327,3 +328,19 @@ def compare_models(models,k, vectors, n_compare):
             time_end = time.time()
             sum_time[j] += time_end-time_start
     return sum_time / n_compare
+
+class knns:
+    def __init__(self,vectors,vector_ids,k):
+        self.vectors = vectors
+        self.vector_ids = vector_ids
+        self.k = k
+    
+    def kdtree(self,x):
+        tree = KDTree(self.vectors)
+        dist, ind = tree.query(x, k=self.k)
+        return self.vector_ids[ind], dist
+    
+    def balltree(self,x):
+        tree = BallTree(self.vectors)
+        dist, ind = tree.query(x, k=self.k)
+        return self.vector_ids[ind], dist
