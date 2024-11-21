@@ -330,7 +330,7 @@ def compare_models(models,k, vectors, n_compare):
             sum_time[j] += time_end-time_start
     return sum_time / n_compare
 
-class KDtree:
+class OurKDtree:
     def __init__(self, vectors, vector_ids):
         self.name = 'KD-tree'
         self.kdtree = KDTree(vectors)
@@ -341,7 +341,7 @@ class KDtree:
         distances, top_k_idx = self.kdtree.query(x, k)
         return self.vector_ids[top_k_idx], distances
     
-class BallTree:
+class OurBallTree:
     def __init__(self, vectors, vector_ids):
         self.name = 'Ball-tree'
         self.balltree = BallTree(vectors)
