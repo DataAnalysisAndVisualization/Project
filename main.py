@@ -35,6 +35,8 @@ def plot_search_time_boxplot(models, vectors, k, n_tries, dataset_name):
     plt.xlabel('model')
     plt.ylabel('Search Time')
     plt.show()
+    plt.savefig(f'{dataset_name}_{k}_nns_search_time.png')
+
 
 
 def main():
