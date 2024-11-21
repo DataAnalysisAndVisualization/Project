@@ -122,6 +122,18 @@ class GreedyKmeans:
             cluster = cluster.find_closest_cluster(x)
         return cluster
 
+    def knns_with_count(self, x, k):
+        searched = 1
+        closest_cluster = self.find_closest_base_cluster(x)
+        top_k_vector_ids, top_k_vector_distances = closest_cluster.find_top_k(x, k)
+        cluster_queue = self.queues[closest_cluster.cluster_id]
+        for clusters_distance, cluster in cluster_queue:
+            if clusters_distance > max(top_k_vector_distances):
+                return top_k_vector_ids, top_k_vector_distances, searched
+            searched += 1
+            top_k_vector_ids, top_k_vector_distances = cluster.update_top_k(x, k, top_k_vector_ids, top_k_vector_distances)
+        return top_k_vector_ids, top_k_vector_distances, searched
+
     def knns(self, x, k):
         # delete_this = 1
         closest_cluster = self.find_closest_base_cluster(x)
