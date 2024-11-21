@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 
 from data import build_mnist_dataset
-from index_models import ExhaustiveSearch, GreedyKmeans
+from index_models import ExhaustiveSearch, GreedyKmeans, OurKDtree, OurBallTree
 
 
 def time_model_search_vector(model, vector, k, n_tries):
@@ -36,16 +36,22 @@ def plot_search_time_boxplot(models, vectors, k, n_tries, dataset_name):
     plt.ylabel('Search Time')
     plt.show()
 
-
-def main():
-    np.random.seed(42)
+def plot_mnist():
     mnist_dataset = build_mnist_dataset()[:10000]
     vector_ids = np.array(range(mnist_dataset.shape[0]))
     exhaustive_search = ExhaustiveSearch(mnist_dataset, vector_ids)
     greedy_kmeans = GreedyKmeans(mnist_dataset, vector_ids, n_layer_clusters=20, max_layers=1)
-    search_vectors = mnist_dataset[np.random.randint(mnist_dataset.shape[0],size=500)]
-    plot_search_time_boxplot([exhaustive_search, greedy_kmeans], search_vectors, 10, 2,
+    kd_tree = OurKDtree(mnist_dataset, vector_ids)
+    ball_tree = OurBallTree(mnist_dataset, vector_ids)
+    models = [exhaustive_search, greedy_kmeans, kd_tree, ball_tree]
+    search_vectors = mnist_dataset[np.random.randint(mnist_dataset.shape[0], size=500)]
+    plot_search_time_boxplot(models, search_vectors, 10, 2,
                              'mnist')
+
+
+def main():
+    np.random.seed(42)
+    plot_mnist()
 
 if __name__ == '__main__':
     main()
