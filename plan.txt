@@ -1,10 +1,11 @@
 Our algorithm:
 Index hierarchical k-means, using k-means++.
-calculate voronoi diagram on the lowest level clusters.
-Convert the lowest level clusters to a graph. Every vertex has search status.
+Calculate polyhedrons of lowest level cluster (calculate voronoi diagram on the lowest level clusters).
+Calculate polyhedrons distances (Calculate vertex distance lower bound using the voronoi diagram.)
+Calculate search queue for every polyhedrons (Convert the lowest level clusters to a graph. Every vertex has search status.)
 Each cluster holds a list of vectors.
-Calculate vertex distance lower bound using the voronoi diagram.
-Run nearest neighbors search using greedy search over the graph and pruning.
+
+Run nearest neighbors search using queue search over the graph and pruning.
 
 Datasets: MNIST, BERT embeddings of New York Times articles.
 
@@ -23,3 +24,12 @@ Project Structure:
 models part - receive dataset, nns in the interface.
 datasets part - load/create dataset.
 evaluation part - optimize our algorithm and test others.
+
+
+TODO:
+1. implement KD-Tree
+2. implement ball tree
+3. measure runtime for an algorithm and a point
+4. compare algorithms on a database - calculate boxplot for every algorithm.
+5. compare algorithms on databases.
+6. write findings

@@ -24,7 +24,7 @@ def build_text_dataset(DATASET_NAME='wikitext', CONFIG_NAME='wikitext-2-raw-v1',
     # Load the pre-trained embedding model
     model = SentenceTransformer(EMBEDDING_MODEL)
     dataset = load_dataset(DATASET_NAME, name=CONFIG_NAME)
-    texts = dataset['train']['text'][:1000]
+    texts = dataset['train']['text'][:100]
     # Generate embeddings for the texts
     embeddings = model.encode(texts)
     embeddings_array = np.array(embeddings)

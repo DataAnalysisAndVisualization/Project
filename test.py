@@ -3,7 +3,7 @@ from index_models import *
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from matplotlib import pyplot as plt
 import cvxpy as cp
-# from data import *
+from data import *
 import time
 
 
@@ -105,8 +105,8 @@ def test_calc_polyhedrons():
     print(time.time()-t)
 
 def test_GreedyKmeans():
-    n_vectors = 1000
-    dim = 2
+    n_vectors = 100
+    dim = 20
     k = 10
     vectors = np.random.rand(n_vectors, dim)
     vector_ids = np.array((range(n_vectors)))
@@ -142,14 +142,14 @@ def test_build_text_dataset():
 
 def test_compere_models():
     n_vectors = 10000
-    dim = 2
+    dim = 20
     k = 2
     vectors = np.random.rand(n_vectors, dim)
     vector_ids = np.array((range(n_vectors)))
-    greedy_kmeans = GreedyKmeans(vectors, vector_ids, n_layer_clusters=60, max_layers=1)
+    greedy_kmeans = GreedyKmeans(vectors, vector_ids, n_layer_clusters=40, max_layers=1)
     exhaustive_search = ExhaustiveSearch(vectors, vector_ids)
     models = (greedy_kmeans, exhaustive_search)
-    ave_times = compare_models(models, k, vectors, n_compare=10000)
+    ave_times = compare_models(models, k, vectors, n_compare=100)
     print(ave_times)
 
 
