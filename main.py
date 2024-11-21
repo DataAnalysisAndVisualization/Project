@@ -48,12 +48,12 @@ def plot_dataset(dataset, dataset_name):
 
 def plot_searched():
     np.random.seed(42)
-    dims = [2,3,5,10,50,100]
-    ks = [1, 5, 10, 50, 100, 500, 1000]
+    dims = [2,3,5,10]
+    ks = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000]
     for dim in dims:
-        uniform_set = random_data(100000, dim)
+        uniform_set = random_data(10000, dim)
         vector_ids = np.array(range(uniform_set.shape[0]))
-        greedy_kmeans = GreedyKmeans(uniform_set, vector_ids, n_layer_clusters=20, max_layers=1)
+        greedy_kmeans = GreedyKmeans(uniform_set, vector_ids, n_layer_clusters=40, max_layers=1)
         search_vectors = uniform_set[np.random.randint(uniform_set.shape[0], size=500)]
         ave_search_list = []
         for k in ks:
@@ -63,11 +63,12 @@ def plot_searched():
                 sum_searched += searched
             ave_searched = sum_searched/len(search_vectors)
             ave_search_list.append(ave_searched)
-        plt.scatter(ks, ave_search_list, label=dim)
+        plt.plot(ks, ave_search_list, label=dim)
     plt.xscale('log')
     plt.xlabel('k')
     plt.ylabel('Average number of searched clusters')
-    plt.legend()
+    plt.legend(title="dim")
+    plt.title('Average number of searched clusters vs k')
     plt.show()
 
 def main():
@@ -76,7 +77,7 @@ def main():
     # plot_dataset(mnist, 'mnist')
     # wiki = build_text_dataset()
     # plot_dataset(wiki, 'miniLM embedded wiki')
-    uniform_set = random_data(10000, 3)
+    # uniform_set = random_data(10000, 3)
     # plot_dataset(uniform_set, 'uniform dataset')
     plot_searched()
 

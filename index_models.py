@@ -40,7 +40,7 @@ class BaseCluster:
         cluster_distances = np.linalg.norm(self.vectors - x, axis=1)# cdist(x, self.vectors, 'euclidean')
         concat_distances = np.concatenate((top_k_vector_distances, cluster_distances))
         concat_ids = np.concatenate((top_k_vector_ids, self.vector_ids))
-        if k <= top_k_vector_ids.shape[0] + self.vectors.shape[0]:
+        if k < top_k_vector_ids.shape[0] + self.vectors.shape[0]:
             new_top_k_idx = np.argpartition(concat_distances, k)[:k]
             return concat_ids[new_top_k_idx], concat_distances[new_top_k_idx]
         else:
