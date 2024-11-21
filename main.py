@@ -49,7 +49,7 @@ def plot_mnist():
     search_vectors = mnist_dataset[np.random.randint(mnist_dataset.shape[0], size=500)]
     plot_search_time_boxplot(models, search_vectors, 10, 2,
                              'mnist')
-
+T
 
 def main():
     np.random.seed(42)
