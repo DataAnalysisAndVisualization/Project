@@ -70,6 +70,41 @@ def plot_searched():
     plt.legend(title="dim")
     plt.title('Average number of searched clusters vs k')
     plt.show()
+    plt.savefig('searched_clusters.png')
+
+def cluster_searched():
+    # check the time for finding the avarage distance between the clusters compared to the number of clusters
+    np.random.seed(42)
+    ks = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000]
+    dims = [2,3,5,10]
+    for dim in dims:
+        time_list = []
+        t = time.time()
+        uniform_set = random_data(10000, dim)
+        vector_ids = np.array(range(uniform_set.shape[0]))
+        greedy_kmeans = GreedyKmeans(uniform_set, vector_ids, n_layer_clusters=40, max_layers=1)
+        ave_distance_list = []
+        for k in ks:
+            sum_distance = 0
+            for vector in uniform_set:
+                _, distances, _ = greedy_kmeans.knns_with_count(vector, k)
+                sum_distance += np.mean(distances)
+            ave_distance = sum_distance/len(uniform_set)
+            ave_distance_list.append(ave_distance)
+            time_list.append(time.time()-t)
+            t = time.time()
+        plt.plot(ks, time_list, label=dim)
+    plt.xscale('log') 
+    plt.xlabel('k')
+    plt.ylabel('Time')
+    plt.legend(title="dim")
+    plt.title('Time vs k')
+    plt.show()
+    plt.savefig('time_vs_k.png')
+
+
+    
+
 
 def main():
     np.random.seed(42)
@@ -79,7 +114,7 @@ def main():
     # plot_dataset(wiki, 'miniLM embedded wiki')
     # uniform_set = random_data(10000, 3)
     # plot_dataset(uniform_set, 'uniform dataset')
-    plot_searched()
+    cluster_searched()
 
 if __name__ == '__main__':
     main()
