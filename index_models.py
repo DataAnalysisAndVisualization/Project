@@ -350,7 +350,7 @@ class OurKDtree:
         self.vector_ids = vector_ids
 
     def knns(self, x, k):
-        distances, top_k_idx = self.kdtree.query(x, k)
+        distances, top_k_idx = self.kdtree.query([x,], k)
         return self.vector_ids[top_k_idx], distances
     
 class OurBallTree:
@@ -361,5 +361,5 @@ class OurBallTree:
         self.vector_ids = vector_ids
 
     def knns(self, x, k):
-        distances, top_k_idx = self.balltree.query(x, k)
+        distances, top_k_idx = self.balltree.query([x,], k)
         return self.vector_ids[top_k_idx], distances
