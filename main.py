@@ -5,7 +5,8 @@ import pandas as pd
 import numpy as np
 
 from data import build_mnist_dataset, build_text_dataset, random_data
-from index_models import ExhaustiveSearch, GreedyKmeans, OurKDtree, OurBallTree, calc_polyhedrons, calc_distance_matrix
+from index_models import ExhaustiveSearch, GreedyKmeans, OurKDtree, OurBallTree, calc_polyhedrons, calc_distance_matrix, \
+    calc_hierarchical_kmeans
 
 
 def time_model_search_vector(model, vector, k, n_tries):
@@ -104,29 +105,62 @@ def cluster_searched():
     plt.savefig('time_vs_k.png')
     plt.show()
 
-def plot_ave_dist_time():
-    n_redu = 10
+def plot_dist_approx_time():
+    n_redo = 5
     np.random.seed(42)
-    uniform_set = random_data(10000, 3)
-    vector_ids = np.array(range(uniform_set.shape[0]))
-    ks = list(range(2, 31))
-    ave_times = []
-    for k in ks:
-        greedy_kmeans = GreedyKmeans(uniform_set, vector_ids, n_layer_clusters=k, max_layers=1)
-        As, bs = calc_polyhedrons(greedy_kmeans.base_centroids)
-        start_time = time.time()
-        for i in range(n_redu):
-            calc_distance_matrix(As, bs, greedy_kmeans.base_centroids, 0.001)
-        end_time = time.time()
-        n = len(greedy_kmeans.base_centroids)
-        ave_time = (end_time - start_time) / (n*(n-1)*n_redu/2)
-        ave_times.append(ave_time)
+    clusters_nums = list(range(2, 31))
+    dims = [2,3,5]
+    for dim in dims:
+        ave_times = []
+        for clusters_num in clusters_nums:
+            k_sum_time = 0
+            for i in range(n_redo):
+                uniform_set = random_data(10000, dim)
+                vector_ids = np.array(range(uniform_set.shape[0]))
+                root_cluster, _ = calc_hierarchical_kmeans(uniform_set, vector_ids, clusters_num, 1, max_iter=100)
+                base_centroids, base_clusters = root_cluster.extract_base_clusters()
+                As, bs = calc_polyhedrons(base_centroids)
+                start_time = time.time()
+                calc_distance_matrix(As, bs, base_centroids, 0.001)
+                end_time = time.time()
+                k_sum_time += end_time-start_time
+            ave_time = (k_sum_time/n_redo) / (clusters_num*(clusters_num-1)/2)
+            ave_times.append(ave_time)
 
-    plt.plot(ks, ave_times)
+        plt.plot(clusters_nums, ave_times, label=dim)
     plt.xlabel('Clusters number')
     plt.ylabel('Time (sec)')
-    plt.title('Average distance approximation time vs clusters number')
-    plt.savefig('ave_dist_time_vs_cluster_num')
+    plt.title('Distance approximation time vs clusters number')
+    plt.legend()
+    plt.savefig('dist_approx_time_vs_cluster_num')
+    plt.show()
+
+
+def plot_index_time():
+    n_redo = 5
+    np.random.seed(42)
+    clusters_nums = list(range(2, 31))
+    dims = [2,3,5]
+    for dim in dims:
+        ave_times = []
+        for clusters_num in clusters_nums:
+            k_sum_time = 0
+            for i in range(n_redo):
+                uniform_set = random_data(10000, dim)
+                vector_ids = np.array(range(uniform_set.shape[0]))
+                start_time = time.time()
+                greedy_kmeans = GreedyKmeans(uniform_set, vector_ids, n_layer_clusters=clusters_num, max_layers=1)
+                end_time = time.time()
+                k_sum_time += end_time-start_time
+            ave_time = k_sum_time/n_redo
+            ave_times.append(ave_time)
+
+        plt.plot(clusters_nums, ave_times, label=dim)
+    plt.xlabel('Clusters number')
+    plt.ylabel('Time (sec)')
+    plt.title('Index time vs clusters number')
+    plt.legend()
+    plt.savefig('index_time')
     plt.show()
 
 
@@ -139,7 +173,8 @@ def main():
     # uniform_set = random_data(10000, 2)
     # plot_dataset(uniform_set, 'uniform dataset')
     # cluster_searched()
-    plot_ave_dist_time()
+    # plot_dist_approx_time()
+    plot_index_time()
 
 if __name__ == '__main__':
     main()
