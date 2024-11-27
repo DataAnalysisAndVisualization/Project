@@ -40,5 +40,3 @@ def random_data(n_vectors, dim):
     data = np.random.rand(n_vectors, dim)
     return data
 
-    
-
