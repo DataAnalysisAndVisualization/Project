@@ -1,5 +1,6 @@
 import time
 from scipy.spatial import KDTree
+from scipy.spatial.distance import cdist
 from sklearn.neighbors import BallTree
 import numpy as np
 import cvxpy as cp
@@ -319,6 +320,12 @@ def calc_distance_matrix(As, bs, centroids, eps_abs=0.001):
             distances[i,j] = dist
             distances[j,i] = dist
     return distances
+
+def calc_min_pair_dist(vectors):
+    distances = cdist(vectors, vectors, metric='euclidean')
+    np.fill_diagonal(distances, np.inf)
+    min_distance = np.min(distances)
+    return min_distance
 
 class ExhaustiveSearch:
     def __init__(self, vectors, vector_ids):

@@ -20,11 +20,14 @@ def build_mnist_dataset(download=True):
 
 
 
-def build_text_dataset(DATASET_NAME='wikitext', CONFIG_NAME='wikitext-2-raw-v1', EMBEDDING_MODEL='all-MiniLM-L6-v2'):
+def build_text_dataset(DATASET_NAME='wikitext', CONFIG_NAME='wikitext-2-raw-v1', EMBEDDING_MODEL='all-MiniLM-L6-v2',
+                       n_rows=None):
     # Load the pre-trained embedding model
     model = SentenceTransformer(EMBEDDING_MODEL)
     dataset = load_dataset(DATASET_NAME, name=CONFIG_NAME)
-    texts = dataset['train']['text'][:100]
+    texts = dataset['train']['text']
+    if n_rows is not None:
+        texts = texts[:n_rows]
     # Generate embeddings for the texts
     embeddings = model.encode(texts)
     embeddings_array = np.array(embeddings)

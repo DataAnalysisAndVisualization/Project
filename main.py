@@ -6,7 +6,7 @@ import numpy as np
 
 from data import build_mnist_dataset, build_text_dataset, random_data
 from index_models import ExhaustiveSearch, GreedyKmeans, OurKDtree, OurBallTree, calc_polyhedrons, calc_distance_matrix, \
-    calc_hierarchical_kmeans
+    calc_hierarchical_kmeans, calc_min_pair_dist
 
 
 def time_model_search_vector(model, vector, k, n_tries):
@@ -33,8 +33,6 @@ def plot_search_time_boxplot(models, vectors, k, n_tries, dataset_name):
     plt.ylabel('Search Time (sec)')
     plt.savefig(f'{dataset_name}_{k}_nns_search_time.png')
     plt.show()
-
-
 
 def plot_dataset(dataset, dataset_name):
     np.random.seed(42)
@@ -70,7 +68,7 @@ def plot_searched():
     plt.xlabel('k')
     plt.ylabel('Average number of searched clusters')
     plt.legend(title="data dimension")
-    plt.title('Average number of searched clusters vs k')
+    plt.title('Number of searched clusters vs number of neighbors searched')
     plt.savefig('searched_clusters.png')
     plt.show()
 
@@ -100,7 +98,7 @@ def cluster_searched():
     # plt.xscale('log')
     plt.xlabel('k')
     plt.ylabel('Time')
-    plt.legend(title="dim")
+    plt.legend(title="data dimension")
     plt.title('Time vs k')
     plt.savefig('time_vs_k.png')
     plt.show()
@@ -108,8 +106,8 @@ def cluster_searched():
 def plot_dist_approx_time():
     n_redo = 5
     np.random.seed(42)
-    clusters_nums = list(range(2, 31))
-    dims = [2,3,5]
+    clusters_nums = list(range(3, 31))
+    dims = [2,10,50]
     for dim in dims:
         ave_times = []
         for clusters_num in clusters_nums:
@@ -131,7 +129,7 @@ def plot_dist_approx_time():
     plt.xlabel('Clusters number')
     plt.ylabel('Time (sec)')
     plt.title('Distance approximation time vs clusters number')
-    plt.legend()
+    plt.legend(title="data dimension")
     plt.savefig('dist_approx_time_vs_cluster_num')
     plt.show()
 
@@ -140,7 +138,7 @@ def plot_index_time():
     n_redo = 5
     np.random.seed(42)
     clusters_nums = list(range(2, 31))
-    dims = [2,3,5]
+    dims = [2,10,50]
     for dim in dims:
         ave_times = []
         for clusters_num in clusters_nums:
@@ -159,7 +157,7 @@ def plot_index_time():
     plt.xlabel('Clusters number')
     plt.ylabel('Time (sec)')
     plt.title('Index time vs clusters number')
-    plt.legend()
+    plt.legend(title="data dimension")
     plt.savefig('index_time')
     plt.show()
 
@@ -168,13 +166,14 @@ def main():
     np.random.seed(42)
     # mnist = build_mnist_dataset()[:2000]
     # plot_dataset(mnist, 'mnist')
-    # wiki = build_text_dataset()
+    # wiki = build_text_dataset(n_rows=10000)
     # plot_dataset(wiki, 'miniLM embedded wiki')
     # uniform_set = random_data(10000, 2)
     # plot_dataset(uniform_set, 'uniform dataset')
     # cluster_searched()
     # plot_dist_approx_time()
-    plot_index_time()
+    # plot_index_time()
+    # plot_searched()
 
 if __name__ == '__main__':
     main()
