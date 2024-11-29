@@ -191,16 +191,16 @@ def plot_index_time():
 
 def main():
     np.random.seed(42)
-    # mnist = build_mnist_dataset()[:2000]
-    # plot_dataset(mnist, 'mnist')
-    # wiki = build_text_dataset(n_rows=10000)
-    # plot_dataset(wiki, 'miniLM embedded wiki')
-    # uniform_set = random_data(10000, 2)
-    # plot_dataset(uniform_set, 'uniform dataset')
-    # cluster_searched()
-    # plot_dist_approx_time()
-    # plot_index_time()
-    # plot_searched()
+    mnist = build_mnist_dataset()[:2000]
+    plot_dataset(mnist, 'mnist')
+    wiki = build_text_dataset(n_rows=10000)
+    plot_dataset(wiki, 'miniLM embedded wiki')
+    uniform_set = random_data(10000, 2)
+    plot_dataset(uniform_set, 'uniform dataset')
+    cluster_searched()
+    plot_dist_approx_time()
+    plot_index_time()
+    plot_searched()
 
 if __name__ == '__main__':
     main()
