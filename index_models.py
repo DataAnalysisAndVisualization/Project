@@ -48,6 +48,9 @@ class BaseCluster:
             return concat_ids, concat_distances
 
     def find_top_k(self, x, k):
+        """
+        Find the top k closest neighbors to x in the cluster
+        """
         cluster_distances = np.linalg.norm(self.vectors - x, axis=1)# cdist(x, self.vectors, 'euclidean')
         if k < self.vectors.shape[0]:
             top_k_idx = np.argpartition(cluster_distances, k)[:k]
@@ -56,13 +59,27 @@ class BaseCluster:
         return self.vector_ids, cluster_distances
 
 class SuperCluster:
+    """
+    Class for the super cluster in the hierarchical kmeans
+    """
     def __init__(self, centroid, sub_centroids, sub_clusters, layer):
+        """
+        Initialize the super cluster
+        :param 
+        centroid: The centroid of the super cluster
+        sub_centroids: The centroids of the sub clusters
+        sub_clusters: The sub clusters
+        layer: The layer of the super cluster
+        """
         self.centroid = centroid
         self.sub_centroids = sub_centroids
         self.sub_clusters = sub_clusters
         self.layer = layer
 
     def extract_base_clusters(self):
+        """
+        Extract the base clusters from the super cluster
+        """
         if self.layer == 1:
             return self.sub_centroids, self.sub_clusters
 
@@ -79,12 +96,26 @@ class SuperCluster:
         return base_centroids, base_clusters
 
     def find_closest_cluster(self, x):
+        """
+        Find the closest cluster to x
+        """
         x_cluster_distances = np.linalg.norm(self.sub_centroids - x, axis=1)# cdist(x.reshape(1, -1), self.sub_centroids, 'euclidean')
         closest_index = np.argmin(x_cluster_distances)
         return self.sub_clusters[closest_index]
 
 
 def calc_hierarchical_kmeans(vectors, vector_ids, n_clusters, max_layers, max_iter=100, cluster_id=0, super_centroid=None):
+    """
+    Calculate the hierarchical kmeans
+    params:
+    vectors: The vectors to cluster
+    vector_ids: The ids of the vectors
+    n_clusters: The number of clusters
+    max_layers: The number of layers
+    max_iter: The max number of iterations
+    cluster_id: The id of the first cluster
+    super_centroid: The centroid of the super cluster
+    """
     centroids, clusters = calc_k_means(vectors, vector_ids, n_clusters, max_iter)
     if max_layers > 1:
         sub_clusters = []
@@ -110,7 +141,17 @@ def calc_hierarchical_kmeans(vectors, vector_ids, n_clusters, max_layers, max_it
     return super_cluster, cluster_id
 
 class GreedyKmeans:
+    """
+    Class for the greedy kmeans algorithm
+    """
     def __init__(self, vectors, vector_ids, n_layer_clusters, max_layers):
+        """
+        Initialize the greedy kmeans algorithm
+        :param vectors: The vectors to cluster
+        :param vector_ids: The ids of the vectors
+        :param n_layer_clusters: The number of clusters in the first layer
+        :param max_layers: The max number of layers
+        """
         self.name = 'greedy kmeans'
         self.root_cluster, _ = calc_hierarchical_kmeans(vectors, vector_ids, n_layer_clusters, max_layers, max_iter=100)
         self.base_centroids, self.base_clusters = self.root_cluster.extract_base_clusters()
@@ -118,12 +159,19 @@ class GreedyKmeans:
         self.queues = calc_search_queues(As, bs, self.base_centroids, self.base_clusters, eps_abs=0.001)
 
     def find_closest_base_cluster(self, x):
+        """
+        Find the closest base cluster to x
+        """
         cluster = self.root_cluster
         while cluster.layer > 0:
             cluster = cluster.find_closest_cluster(x)
         return cluster
 
     def knns_with_count(self, x, k):
+        """
+        Find the top k closest neighbors to x in the vectors
+        and return the number of searched clusters
+        """
         searched = 1
         closest_cluster = self.find_closest_base_cluster(x)
         top_k_vector_ids, top_k_vector_distances = closest_cluster.find_top_k(x, k)
@@ -136,17 +184,16 @@ class GreedyKmeans:
         return top_k_vector_ids, top_k_vector_distances, searched
 
     def knns(self, x, k):
-        # delete_this = 1
+        """
+        Find the top k closest neighbors to x in the vectors
+        """
         closest_cluster = self.find_closest_base_cluster(x)
         top_k_vector_ids, top_k_vector_distances = closest_cluster.find_top_k(x, k)
         cluster_queue = self.queues[closest_cluster.cluster_id]
         for clusters_distance, cluster in cluster_queue:
             if clusters_distance > max(top_k_vector_distances):
-                # print('searched: ', delete_this, '/', len(cluster_queue)+1)
                 return top_k_vector_ids, top_k_vector_distances
-            # delete_this += 1
             top_k_vector_ids, top_k_vector_distances = cluster.update_top_k(x, k, top_k_vector_ids, top_k_vector_distances)
-        # print('searched: ', delete_this, '/', len(cluster_queue)+1)
         return top_k_vector_ids, top_k_vector_distances
 
 def chose_kmeans_pp_clusters(vectors, n_clusters):
@@ -278,22 +325,21 @@ def approximate_distance(A, b, x0, B, c, y0, eps_abs=0.001):
 
     # Define and solve the problem
     problem = cp.Problem(objective, constraints)
-    # try:
-    solution = problem.solve(solver='SCS', eps_abs=eps_abs)# , solver='OSQP' TODO: Understand why OSQP doesn't work for dim=2
-    # except Exception as e:
-    #     print(A@x0<=b)
-    #     print(B@y0<=c)
-    #     print("x is affine:", x.is_affine())
-    #     print("y is affine:", y.is_affine())
-    #     print("Problem is DCP:", problem.is_dcp())
-    #     print("Problem is DPP:", problem.is_dpp())
-    #
-    #     print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
-    #     raise e
+    solution = problem.solve(solver='SCS', eps_abs=eps_abs)
+
     return solution-eps_abs
-    # return problem.solve(eps_abs=eps_abs)
 
 def calc_search_queues(As, bs, base_centroids, base_clusters, eps_abs=0.001):
+    """
+    Calculate the search queues for the greedy kmeans algorithm
+    and return them
+    :param As: The polyhedrons A matrices
+    :param bs: The polyhedrons b vectors
+    :param base_centroids: The centroids of the base clusters
+    :param base_clusters: The base clusters
+    :param eps_abs: The absolute error
+    :return: The search queues
+    """
     distance_matrix = calc_distance_matrix(As, bs, base_centroids, eps_abs)
     n_clusters = len(base_clusters)
     queues = []
@@ -310,6 +356,14 @@ def calc_search_queues(As, bs, base_centroids, base_clusters, eps_abs=0.001):
     return queues
 
 def calc_distance_matrix(As, bs, centroids, eps_abs=0.001):
+    """
+    Calculate the distance matrix between the polyhedrons using the approximate_distance function
+    :param As: The polyhedrons A matrices
+    :param bs: The polyhedrons b vectors
+    :param centroids: The centroids of the polyhedrons
+    :param eps_abs: The absolute error
+    :return: The distance matrix
+    """
     n_polyhedrons = len(As)
     distances = np.zeros((n_polyhedrons, n_polyhedrons))
     for i in range(n_polyhedrons):
@@ -322,23 +376,42 @@ def calc_distance_matrix(As, bs, centroids, eps_abs=0.001):
     return distances
 
 def calc_min_pair_dist(vectors):
+    """
+    Calculate the minimum distance between the vectors
+    """
     distances = cdist(vectors, vectors, metric='euclidean')
     np.fill_diagonal(distances, np.inf)
     min_distance = np.min(distances)
     return min_distance
 
 class ExhaustiveSearch:
+    """
+    Class for the exhaustive search algorithm
+    """
     def __init__(self, vectors, vector_ids):
+        """
+        Initialize the exhaustive search algorithm
+        :param vectors: The vectors to search
+        :param vector_ids: The ids of the vectors
+        """
         self.name = 'exhaustive search'
         self.vectors = vectors
         self.vector_ids = vector_ids
 
     def knns(self, x, k):
-        distances = np.linalg.norm(self.vectors - x, axis=1)  # cdist(x, self.vectors, 'euclidean')
+        distances = np.linalg.norm(self.vectors - x, axis=1)
         top_k_idx = np.argpartition(distances, k)[:k]
         return self.vector_ids[top_k_idx], distances[top_k_idx]
 
 def compare_models(models,k, vectors, n_compare):
+    """
+    Compare the models using the knns function
+    :param models: The models to compare
+    :param k: The number of nearest neighbors
+    :param vectors: The vectors to search for
+    :param n_compare: The number of tries to average the time
+    :return: The average time for each
+    """
     sum_time = np.zeros(len(models))
     for i in range(n_compare):
         x = vectors[np.random.randint(vectors.shape[0])]
@@ -350,7 +423,15 @@ def compare_models(models,k, vectors, n_compare):
     return sum_time / n_compare
 
 class OurKDtree:
+    """
+    Class for the KD-tree algorithm
+    """
     def __init__(self, vectors, vector_ids):
+        """
+        Initialize the KD-tree algorithm
+        :param vectors: The vectors to search
+        :param vector_ids: The ids of the vectors
+        """
         self.name = 'KD-tree'
         self.kdtree = KDTree(vectors)
         self.vectors = vectors
@@ -361,7 +442,15 @@ class OurKDtree:
         return self.vector_ids[top_k_idx], distances
     
 class OurBallTree:
+    """
+    Class for the Ball-tree algorithm
+    """
     def __init__(self, vectors, vector_ids):
+        """
+        Initialize the Ball-tree algorithm
+        :param vectors: The vectors to search
+        :param vector_ids: The ids of the vectors
+        """
         self.name = 'Ball-tree'
         self.balltree = BallTree(vectors)
         self.vectors = vectors

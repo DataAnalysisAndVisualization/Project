@@ -10,6 +10,14 @@ from index_models import ExhaustiveSearch, GreedyKmeans, OurKDtree, OurBallTree,
 
 
 def time_model_search_vector(model, vector, k, n_tries):
+    """
+    Used for measure the time for a model to search for k nearest neighbors of a vector for plotting the results
+    param: 
+    model: the model to measure the time for
+    vector: the vector to search for
+    k: the number of nearest neighbors to search for
+    n_tries: the number of tries to average the time
+    """
     sum_time = 0
     for i in range(n_tries):
         start_time = time.time()
@@ -19,6 +27,15 @@ def time_model_search_vector(model, vector, k, n_tries):
     return sum_time/n_tries
 
 def plot_search_time_boxplot(models, vectors, k, n_tries, dataset_name):
+    """
+    Used for plotting the search time of each model for the given vectors
+    param:
+    models: the models to compare
+    vectors: the vectors to search for
+    k: the number of nearest neighbors to search for
+    n_tries: the number of tries to average the time
+    dataset_name: the name of the dataset to plot the results
+    """
     data = []
     for model in models:
         for vector in vectors:
@@ -35,6 +52,13 @@ def plot_search_time_boxplot(models, vectors, k, n_tries, dataset_name):
     plt.show()
 
 def plot_dataset(dataset, dataset_name):
+    """
+    Used for setting the models and vectors for the given dataset and plot the search time of each model
+    using the plot_search_time_boxplot function
+    param:
+    dataset: the dataset to search for
+    dataset_name: the name of the dataset to plot the results
+    """
     np.random.seed(42)
     vector_ids = np.array(range(dataset.shape[0]))
     exhaustive_search = ExhaustiveSearch(dataset, vector_ids)
@@ -47,6 +71,7 @@ def plot_dataset(dataset, dataset_name):
                              dataset_name)
 
 def plot_searched():
+    # check the number of searched clusters compared to the number of neighbors searched
     np.random.seed(42)
     dims = [2,3,5,10]
     ks = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000]
@@ -104,6 +129,7 @@ def cluster_searched():
     plt.show()
 
 def plot_dist_approx_time():
+    # check the time for approximating the average distance between the clusters compared to the number of clusters
     n_redo = 5
     np.random.seed(42)
     clusters_nums = list(range(3, 31))
@@ -135,6 +161,7 @@ def plot_dist_approx_time():
 
 
 def plot_index_time():
+    # check the average time for building the index compared to the number of clusters
     n_redo = 5
     np.random.seed(42)
     clusters_nums = list(range(2, 31))

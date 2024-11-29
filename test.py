@@ -9,6 +9,7 @@ import time
 
 
 def test_hierarchical_kmeans():
+    #Test the hierarchical kmeans algorithm using a subset of random vectors
     n_vectors = 1000
     vectors = np.random.rand(n_vectors, 100)
     vector_ids = list(range(n_vectors))
@@ -18,6 +19,7 @@ def test_hierarchical_kmeans():
         print(sub_centroids.shape, *sub_clusters_lens)
 
 def test_extract_base_clusters():
+    #Test the extract_base_clusters method using a subset of random vectors
     n_vectors = 1000
     vectors = np.random.rand(n_vectors, 100)
     vector_ids = list(range(n_vectors))
@@ -29,6 +31,7 @@ def test_extract_base_clusters():
         print(base_cluster.cluster_id)
 
 def test_voronoi():
+    #Test the voronoi diagram using a subset of random vectors
     n_vectors = 1000
     vectors = np.random.rand(n_vectors, 2)
     ids = list(range(n_vectors))
@@ -39,6 +42,7 @@ def test_voronoi():
     plt.show()
 
 def plot_voronoi_bad_case():
+    #Plot a bad case for the voronoi diagram
     vectors = np.array([[0, 0],
                         [0, 1],
                         [0, 4],
@@ -86,6 +90,7 @@ def test_approximate_distance():
     print("Number of iterations:", problem.solver_stats.num_iters)
 
 def test_calc_polyhedrons():
+    #Test the calc_polyhedrons function using a subset of random vectors, and print the shapes of the polyhedrons
     n_vectors = 1000
     vectors = np.random.rand(n_vectors, 2)
     vector_ids = list(range(n_vectors))
@@ -105,6 +110,7 @@ def test_calc_polyhedrons():
     print(time.time()-t)
 
 def test_GreedyKmeans():
+    #Test the GreedyKmeans algorithm using a subset of random vectors and print the knns of a random vector
     n_vectors = 100
     dim = 20
     k = 10
@@ -133,14 +139,17 @@ def test_GreedyKmeans():
     print(knn)
 
 def test_build_mnist_dataset():
+    #Test the build_mnist_dataset function and print the shape of the dataset
     images_np = build_mnist_dataset()
     print(images_np.shape)
 
 def test_build_text_dataset():
+    #Test the build_text_dataset function and print the shape of the dataset
     embeddings_array = build_text_dataset()
     print('embedding shape: ', embeddings_array.shape)
 
 def test_compere_models():
+    #Test and compare between the GreedyKmeans and ExhaustiveSearch models, and print the average time for each model
     n_vectors = 10000
     dim = 20
     k = 2
