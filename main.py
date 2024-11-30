@@ -73,7 +73,7 @@ def plot_dataset(dataset, dataset_name):
 def plot_searched():
     # check the number of searched clusters compared to the number of neighbors searched
     np.random.seed(42)
-    dims = [2,3,5,10]
+    dims = [2,3]
     ks = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000]
     for dim in dims:
         uniform_set = random_data(10000, dim)

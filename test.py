@@ -39,7 +39,7 @@ def test_voronoi():
     lowest_centroids, lowest_clusters = root_cluster.extract_base_clusters()
     vor = Voronoi(lowest_centroids)
     fig = voronoi_plot_2d(vor)
-    plt.show()
+    plt.savefig('voroni.png')
 
 def plot_voronoi_bad_case():
     #Plot a bad case for the voronoi diagram
