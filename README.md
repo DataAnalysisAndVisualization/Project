@@ -23,6 +23,12 @@ To run the project, execute the following command:
 python main.py
 ```
 
+## Files
+- main.py - our main file for activation, used for creating the results graph.
+- data.py - used for loading the datasets for our project
+- test.py - used for testing different models and compare between them
+- index_models.py - used for initiallize our different models for activation, along with helper functions for each model
+
 
 ## Contact
 For any questions or feedback, please contact Yonatan Levin, Roy Azuelos & Emily Ramim.
